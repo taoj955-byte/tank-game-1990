@@ -84,7 +84,7 @@
   #controls {
     width: 100%;
     max-width: 500px;
-    height: 180px;
+    height: 190px;
     background: #111;
     border-top: 2px solid #222;
     display: flex;
@@ -95,48 +95,55 @@
     touch-action: none;
   }
 
-  /* 十字键 */
-  #dpad-wrapper {
+  /* 摇杆/十字键区 */
+  #joystick-area {
     position: relative;
-    width: 140px;
-    height: 140px;
-  }
-  .d-btn {
-    position: absolute;
-    background: #252525;
-    border: 2px solid #444;
-    border-radius: 6px;
-    color: #eee;
+    width: 150px;
+    height: 150px;
+    background: #1e1e1e;
+    border: 2px solid #333;
+    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 18px;
+    touch-action: none;
+  }
+  #joystick-knob {
+    position: absolute;
+    width: 60px;
+    height: 60px;
+    background: radial-gradient(circle, #e67e22, #d35400);
+    border: 2px solid #f39c12;
+    border-radius: 50%;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.6);
+    pointer-events: none;
+  }
+  .dir-indicator {
+    position: absolute;
+    color: #666;
+    font-size: 14px;
     font-weight: bold;
+    pointer-events: none;
   }
-  .d-btn:active, .d-btn.pressed {
-    background: #e67e22;
-    color: #fff;
-  }
-  #btn-up { top: 0; left: 45px; width: 50px; height: 48px; border-radius: 8px 8px 0 0; }
-  #btn-down { bottom: 0; left: 45px; width: 50px; height: 48px; border-radius: 0 0 8px 8px; }
-  #btn-left { top: 45px; left: 0; width: 48px; height: 50px; border-radius: 8px 0 0 8px; }
-  #btn-right { top: 45px; right: 0; width: 48px; height: 50px; border-radius: 0 8px 8px 0; }
-  #dpad-center { top: 45px; left: 45px; width: 50px; height: 50px; background: #1c1c1c; border: none; }
+  #ind-up { top: 6px; }
+  #ind-down { bottom: 6px; }
+  #ind-left { left: 8px; }
+  #ind-right { right: 8px; }
 
   /* 动作按钮 */
   #action-wrapper {
     display: flex;
-    gap: 12px;
+    gap: 15px;
     align-items: center;
   }
   .action-btn {
-    width: 70px;
-    height: 70px;
+    width: 75px;
+    height: 75px;
     border-radius: 50%;
     background: linear-gradient(135deg, #e74c3c, #c0392b);
     border: 3px solid #f1c40f;
     color: #fff;
-    font-size: 15px;
+    font-size: 16px;
     font-weight: bold;
     display: flex;
     flex-direction: column;
@@ -149,11 +156,11 @@
     background: #d35400;
   }
   .action-btn.turbo {
-    width: 55px;
-    height: 55px;
+    width: 60px;
+    height: 60px;
     background: linear-gradient(135deg, #27ae60, #229954);
     border-color: #2ecc71;
-    font-size: 12px;
+    font-size: 13px;
   }
   .action-btn.turbo.active {
     background: #e67e22;
@@ -211,24 +218,24 @@
   <canvas id="gameCanvas" width="464" height="416"></canvas>
   <div id="modal">
     <h1 id="modal-title">TANK 1990</h1>
-    <p style="color:#ffd700; margin-bottom:20px; font-size:15px; font-weight:bold;">经典FC坦克大战 • 手机触控版</p>
+    <p style="color:#ffd700; margin-bottom:20px; font-size:15px; font-weight:bold;">经典FC坦克大战 • 手机触控优化版</p>
     <button id="start-btn">开始战斗</button>
   </div>
 </div>
 
-<!-- 移动端虚拟按键 -->
+<!-- 移动端虚拟按键 (触控摇杆 + 大开火键) -->
 <div id="controls">
-  <div id="dpad-wrapper">
-    <div id="btn-up" class="d-btn">▲</div>
-    <div id="btn-down" class="d-btn">▼</div>
-    <div id="btn-left" class="d-btn">◀</div>
-    <div id="btn-right" class="d-btn">▶</div>
-    <div id="dpad-center" class="d-btn"></div>
+  <div id="joystick-area">
+    <div id="ind-up" class="dir-indicator">▲</div>
+    <div id="ind-down" class="dir-indicator">▼</div>
+    <div id="ind-left" class="dir-indicator">◀</div>
+    <div id="ind-right" class="dir-indicator">▶</div>
+    <div id="joystick-knob"></div>
   </div>
 
   <div id="action-wrapper">
-    <div id="btn-turbo" class="action-btn turbo">连发<br><span style="font-size:9px;">AUTO</span></div>
-    <div id="btn-fire" class="action-btn">开火<br><span style="font-size:10px;">FIRE</span></div>
+    <div id="btn-turbo" class="action-btn turbo">连发<br><span style="font-size:10px;">AUTO</span></div>
+    <div id="btn-fire" class="action-btn">开火<br><span style="font-size:11px;">FIRE</span></div>
   </div>
 </div>
 
@@ -528,10 +535,12 @@ class Tank {
     if (nx < 0 || nx + this.size > MAP_WIDTH || ny < 0 || ny + this.size > MAP_HEIGHT) {
       return false;
     }
-    const c1 = Math.floor(nx / TILE_SIZE);
-    const r1 = Math.floor(ny / TILE_SIZE);
-    const c2 = Math.floor((nx + this.size - 1) / TILE_SIZE);
-    const r2 = Math.floor((ny + this.size - 1) / TILE_SIZE);
+    // 允许 3 像素的边缘容错，防止过缝隙卡死
+    const margin = 3;
+    const c1 = Math.floor((nx + margin) / TILE_SIZE);
+    const r1 = Math.floor((ny + margin) / TILE_SIZE);
+    const c2 = Math.floor((nx + this.size - 1 - margin) / TILE_SIZE);
+    const r2 = Math.floor((ny + this.size - 1 - margin) / TILE_SIZE);
 
     for (let r = r1; r <= r2; r++) {
       for (let c = c1; c <= c2; c++) {
@@ -587,7 +596,7 @@ class Tank {
    ========================================================================== */
 class PlayerTank extends Tank {
   constructor(x, y) {
-    super(x, y, DIR.UP, 2.5, '#f1c40f');
+    super(x, y, DIR.UP, 3.2, '#f1c40f'); // 提高基础速度至 3.2，手感更敏捷
     this.level = 1;
     this.invulnerable = true;
     this.invulTime = 180;
@@ -609,17 +618,22 @@ class PlayerTank extends Tank {
     if (input.dir !== null) {
       this.dir = input.dir;
       const [dx, dy] = VEC[this.dir];
-      const nx = this.x + dx * this.speed;
-      const ny = this.y + dy * this.speed;
-
-      // 拐弯对齐智能辅助
+      
+      // 拐弯智能滑行对齐（自动贴近过道网格，避免卡墙角）
       if (this.dir === DIR.UP || this.dir === DIR.DOWN) {
         const snapCol = Math.round(this.x / 16) * 16;
-        if (Math.abs(this.x - snapCol) < 6) this.x = snapCol;
+        if (Math.abs(this.x - snapCol) > 0.5) {
+          this.x += (snapCol - this.x) * 0.4;
+        }
       } else {
         const snapRow = Math.round(this.y / 16) * 16;
-        if (Math.abs(this.y - snapRow) < 6) this.y = snapRow;
+        if (Math.abs(this.y - snapRow) > 0.5) {
+          this.y += (snapRow - this.y) * 0.4;
+        }
       }
+
+      const nx = this.x + dx * this.speed;
+      const ny = this.y + dy * this.speed;
 
       if (this.canMove(nx, ny, game)) {
         this.x = nx;
@@ -638,7 +652,7 @@ class PlayerTank extends Tank {
       const [dx, dy] = VEC[this.dir];
       const bx = this.x + this.size / 2 + dx * 16;
       const by = this.y + this.size / 2 + dy * 16;
-      const speed = this.level >= 2 ? 6.5 : 4.5;
+      const speed = this.level >= 2 ? 7.5 : 5.5;
       game.bullets.push(new Bullet(bx, by, this.dir, speed, true, this.level));
       sfx.shoot();
     }
@@ -836,7 +850,6 @@ class Game {
     this.score = 0;
     this.lives = 3;
     this.enemyPool = 20;
-    // 初始化默认地图防止空引用崩溃
     this.map = JSON.parse(JSON.stringify(STAGES[0]));
     this.player = new PlayerTank(4 * TILE_SIZE, 12 * TILE_SIZE);
     this.enemies = [];
@@ -955,7 +968,6 @@ class Game {
 
     if (!this.map || !this.map.length) return;
 
-    // 绘制地图
     for (let r = 0; r < MAP_ROWS; r++) {
       for (let c = 0; c < MAP_COLS; c++) {
         const tile = this.map[r][c];
@@ -1071,55 +1083,103 @@ class Game {
 const game = new Game();
 
 /* ==========================================================================
-   触摸与按键控制绑定
+   全新手感优化: 360° 无死角灵敏触控虚拟摇杆
    ========================================================================== */
 function setupInput() {
-  const dpad = document.getElementById('dpad-wrapper');
+  const joystickArea = document.getElementById('joystick-area');
+  const joystickKnob = document.getElementById('joystick-knob');
   const btnFire = document.getElementById('btn-fire');
   const btnTurbo = document.getElementById('btn-turbo');
 
-  function handleTouch(e) {
-    e.preventDefault();
-    if (!e.touches || !e.touches.length) {
+  const maxRadius = 45; // 摇杆最大拉动距离
+  let touchId = null;
+
+  function updateJoystick(touch) {
+    const rect = joystickArea.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+
+    const dx = touch.clientX - centerX;
+    const dy = touch.clientY - centerY;
+    const dist = Math.hypot(dx, dy);
+
+    // 死区阈值调小至 8px，极大提高起步响应灵敏度
+    if (dist < 8) {
       game.input.dir = null;
-      document.querySelectorAll('.d-btn').forEach(b => b.classList.remove('pressed'));
+      joystickKnob.style.transform = `translate(0px, 0px)`;
+      resetIndicators();
       return;
     }
-    const rect = dpad.getBoundingClientRect();
-    const touch = e.touches[0];
-    const x = touch.clientX - rect.left - rect.width / 2;
-    const y = touch.clientY - rect.top - rect.height / 2;
 
-    document.querySelectorAll('.d-btn').forEach(b => b.classList.remove('pressed'));
+    // 限制摇杆圆盘拉动范围
+    const angle = Math.atan2(dy, dx);
+    const clampedDist = Math.min(dist, maxRadius);
+    const knobX = Math.cos(angle) * clampedDist;
+    const knobY = Math.sin(angle) * clampedDist;
+    joystickKnob.style.transform = `translate(${knobX}px, ${knobY}px)`;
 
-    if (Math.abs(x) < 15 && Math.abs(y) < 15) {
-      game.input.dir = null;
-      return;
-    }
-
-    if (Math.abs(x) > Math.abs(y)) {
-      if (x > 0) {
+    // 4向灵敏判定 (利用对角线 45° 分割)
+    resetIndicators();
+    if (Math.abs(dx) > Math.abs(dy)) {
+      if (dx > 0) {
         game.input.dir = DIR.RIGHT;
-        document.getElementById('btn-right').classList.add('pressed');
+        document.getElementById('ind-right').style.color = '#ffd700';
       } else {
         game.input.dir = DIR.LEFT;
-        document.getElementById('btn-left').classList.add('pressed');
+        document.getElementById('ind-left').style.color = '#ffd700';
       }
     } else {
-      if (y > 0) {
+      if (dy > 0) {
         game.input.dir = DIR.DOWN;
-        document.getElementById('btn-down').classList.add('pressed');
+        document.getElementById('ind-down').style.color = '#ffd700';
       } else {
         game.input.dir = DIR.UP;
-        document.getElementById('btn-up').classList.add('pressed');
+        document.getElementById('ind-up').style.color = '#ffd700';
       }
     }
   }
 
-  dpad.addEventListener('touchstart', handleTouch, {passive:false});
-  dpad.addEventListener('touchmove', handleTouch, {passive:false});
-  dpad.addEventListener('touchend', handleTouch, {passive:false});
-  dpad.addEventListener('touchcancel', handleTouch, {passive:false});
+  function resetIndicators() {
+    document.querySelectorAll('.dir-indicator').forEach(el => el.style.color = '#666');
+  }
+
+  function resetJoystick() {
+    touchId = null;
+    game.input.dir = null;
+    joystickKnob.style.transform = `translate(0px, 0px)`;
+    resetIndicators();
+  }
+
+  joystickArea.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    const touch = e.changedTouches[0];
+    touchId = touch.identifier;
+    updateJoystick(touch);
+  }, {passive:false});
+
+  window.addEventListener('touchmove', (e) => {
+    if (touchId === null) return;
+    for (let i = 0; i < e.touches.length; i++) {
+      if (e.touches[i].identifier === touchId) {
+        updateJoystick(e.touches[i]);
+        break;
+      }
+    }
+  }, {passive:false});
+
+  window.addEventListener('touchend', (e) => {
+    if (touchId === null) return;
+    for (let i = 0; i < e.changedTouches.length; i++) {
+      if (e.changedTouches[i].identifier === touchId) {
+        resetJoystick();
+        break;
+      }
+    }
+  }, {passive:false});
+
+  window.addEventListener('touchcancel', (e) => {
+    resetJoystick();
+  }, {passive:false});
 
   // 开火按键
   btnFire.addEventListener('touchstart', (e) => {
@@ -1145,7 +1205,7 @@ function setupInput() {
     btnTurbo.classList.toggle('active', Cheats.autoFire);
   });
 
-  // 键盘控制
+  // 键盘控制 (电脑端依然完美兼容)
   window.addEventListener('keydown', (e) => {
     if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') game.input.dir = DIR.UP;
     if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') game.input.dir = DIR.DOWN;
