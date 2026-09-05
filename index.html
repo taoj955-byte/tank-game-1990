@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>经典FC坦克大战 1990 (手机怀旧版)</title>
+<title>经典FC坦克大战 1990 (原版音效+手感重构版)</title>
 <style>
   * {
     margin: 0;
@@ -12,14 +12,15 @@
     -webkit-touch-callout: none;
     -webkit-user-select: none;
     user-select: none;
-    touch-action: manipulation;
+    touch-action: none;
   }
-  body {
+  html, body {
+    width: 100%;
+    height: 100%;
     background: #000;
     color: #fff;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace, sans-serif;
     overflow: hidden;
-    height: 100vh;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -29,28 +30,27 @@
   /* 顶部作弊与状态栏 */
   #top-bar {
     width: 100%;
-    max-width: 500px;
-    background: #1a1a1a;
+    max-width: 480px;
+    background: #181818;
     border-bottom: 2px solid #333;
-    padding: 6px 8px;
+    padding: 4px 6px;
     display: flex;
     flex-wrap: wrap;
-    gap: 6px;
-    justify-content: center;
+    gap: 4px;
+    justify-content: space-around;
     align-items: center;
     z-index: 50;
+    touch-action: auto;
   }
   .cheat-btn {
-    background: #2a2a2a;
+    background: #282828;
     color: #ffd700;
     border: 1px solid #555;
     border-radius: 4px;
-    padding: 5px 8px;
+    padding: 4px 6px;
     font-size: 11px;
     font-weight: bold;
     cursor: pointer;
-    display: inline-flex;
-    align-items: center;
   }
   .cheat-btn.active {
     background: #c0392b;
@@ -67,14 +67,15 @@
     align-items: center;
     justify-content: center;
     width: 100%;
-    max-width: 500px;
+    max-width: 480px;
     background: #000;
+    overflow: hidden;
   }
   canvas {
     background: #000;
     image-rendering: pixelated;
     image-rendering: crisp-edges;
-    box-shadow: 0 0 15px rgba(255,255,255,0.1);
+    box-shadow: 0 0 15px rgba(255,255,255,0.05);
     max-width: 100%;
     max-height: 100%;
     object-fit: contain;
@@ -83,8 +84,8 @@
   /* 移动端控制器 */
   #controls {
     width: 100%;
-    max-width: 500px;
-    height: 190px;
+    max-width: 480px;
+    height: 180px;
     background: #111;
     border-top: 2px solid #222;
     display: flex;
@@ -95,45 +96,39 @@
     touch-action: none;
   }
 
-  /* 摇杆/十字键区 */
-  #joystick-area {
+  /* 经典大型十字按键盘 (大触控区，绝不滑脱) */
+  #dpad-container {
     position: relative;
     width: 150px;
     height: 150px;
-    background: #1e1e1e;
-    border: 2px solid #333;
-    border-radius: 50%;
+  }
+  .d-btn {
+    position: absolute;
+    background: #2c2c2c;
+    border: 2px solid #555;
+    border-radius: 8px;
+    color: #eee;
     display: flex;
     align-items: center;
     justify-content: center;
-    touch-action: none;
-  }
-  #joystick-knob {
-    position: absolute;
-    width: 60px;
-    height: 60px;
-    background: radial-gradient(circle, #e67e22, #d35400);
-    border: 2px solid #f39c12;
-    border-radius: 50%;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.6);
-    pointer-events: none;
-  }
-  .dir-indicator {
-    position: absolute;
-    color: #666;
-    font-size: 14px;
+    font-size: 22px;
     font-weight: bold;
-    pointer-events: none;
   }
-  #ind-up { top: 6px; }
-  #ind-down { bottom: 6px; }
-  #ind-left { left: 8px; }
-  #ind-right { right: 8px; }
+  .d-btn.pressed, .d-btn:active {
+    background: #e67e22 !important;
+    color: #fff !important;
+    border-color: #f39c12 !important;
+  }
+  #btn-up { top: 0; left: 50px; width: 50px; height: 50px; border-radius: 10px 10px 0 0; }
+  #btn-down { bottom: 0; left: 50px; width: 50px; height: 50px; border-radius: 0 0 10px 10px; }
+  #btn-left { top: 50px; left: 0; width: 50px; height: 50px; border-radius: 10px 0 0 10px; }
+  #btn-right { top: 50px; right: 0; width: 50px; height: 50px; border-radius: 0 10px 10px 0; }
+  #dpad-center { top: 50px; left: 50px; width: 50px; height: 50px; background: #222; border: none; }
 
   /* 动作按钮 */
   #action-wrapper {
     display: flex;
-    gap: 15px;
+    gap: 12px;
     align-items: center;
   }
   .action-btn {
@@ -151,7 +146,7 @@
     justify-content: center;
     box-shadow: 0 4px 10px rgba(0,0,0,0.6);
   }
-  .action-btn:active, .action-btn.pressed {
+  .action-btn.pressed, .action-btn:active {
     transform: scale(0.92);
     background: #d35400;
   }
@@ -168,11 +163,11 @@
     box-shadow: 0 0 10px #f39c12;
   }
 
-  /* 启动与过关弹窗遮罩 */
+  /* 启动弹窗遮罩 */
   #modal {
     position: absolute;
     top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.85);
+    background: rgba(0,0,0,0.9);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -182,7 +177,7 @@
   #modal h1 {
     color: #e74c3c;
     font-size: 32px;
-    margin-bottom: 15px;
+    margin-bottom: 12px;
     text-shadow: 2px 2px #000;
     font-family: monospace;
     letter-spacing: 2px;
@@ -191,12 +186,12 @@
     background: #e67e22;
     color: #fff;
     border: 2px solid #f1c40f;
-    padding: 12px 32px;
-    font-size: 18px;
+    padding: 12px 36px;
+    font-size: 20px;
     font-weight: bold;
     border-radius: 8px;
     cursor: pointer;
-    box-shadow: 0 4px 12px rgba(241, 196, 15, 0.4);
+    box-shadow: 0 4px 15px rgba(241, 196, 15, 0.5);
   }
 </style>
 </head>
@@ -209,7 +204,7 @@
   <button id="cheat-max" class="cheat-btn">⭐ 满级火力</button>
   <button id="cheat-bomb" class="cheat-btn">💣 灭全屏</button>
   <button id="cheat-base" class="cheat-btn">🏰 基地加固</button>
-  <button id="btn-sound" class="cheat-btn">🔊 声音: 开</button>
+  <button id="btn-sound" class="cheat-btn active">🔊 声音: 开</button>
   <button id="btn-next-stage" class="cheat-btn">🚩 下一关</button>
 </div>
 
@@ -218,19 +213,19 @@
   <canvas id="gameCanvas" width="464" height="416"></canvas>
   <div id="modal">
     <h1 id="modal-title">TANK 1990</h1>
-    <p style="color:#ffd700; margin-bottom:20px; font-size:15px; font-weight:bold;">经典FC坦克大战 • 手机触控优化版</p>
-    <button id="start-btn">开始战斗</button>
+    <p style="color:#ffd700; margin-bottom:20px; font-size:15px; font-weight:bold;">经典FC坦克大战 • 原版音效手感重构</p>
+    <button id="start-btn">点击进入游戏</button>
   </div>
 </div>
 
-<!-- 移动端虚拟按键 (触控摇杆 + 大开火键) -->
+<!-- 移动端虚拟按键 -->
 <div id="controls">
-  <div id="joystick-area">
-    <div id="ind-up" class="dir-indicator">▲</div>
-    <div id="ind-down" class="dir-indicator">▼</div>
-    <div id="ind-left" class="dir-indicator">◀</div>
-    <div id="ind-right" class="dir-indicator">▶</div>
-    <div id="joystick-knob"></div>
+  <div id="dpad-container">
+    <div id="btn-up" class="d-btn">▲</div>
+    <div id="btn-down" class="d-btn">▼</div>
+    <div id="btn-left" class="d-btn">◀</div>
+    <div id="btn-right" class="d-btn">▶</div>
+    <div id="dpad-center" class="d-btn"></div>
   </div>
 
   <div id="action-wrapper">
@@ -241,100 +236,116 @@
 
 <script>
 /* ==========================================================================
-   FC 原生 8-Bit 音效合成器 (Web Audio API)
+   可靠的移动端 Web Audio 音效引擎 (手机自动解锁 + 100% 响度)
    ========================================================================== */
-class SoundFx {
+class SoundEngine {
   constructor() {
     this.ctx = null;
     this.enabled = true;
+    this.unlocked = false;
   }
-  init() {
+  unlock() {
     if (!this.ctx) {
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
-      if (AudioCtx) this.ctx = new AudioCtx();
+      if (AudioCtx) {
+        this.ctx = new AudioCtx();
+      }
     }
     if (this.ctx && this.ctx.state === 'suspended') {
       this.ctx.resume();
     }
+    this.unlocked = true;
   }
-  playTone(freq, duration, type='square', vol=0.1) {
+  playTone(freq, duration, type='square', vol=0.15) {
     if (!this.enabled || !this.ctx) return;
+    this.unlock();
     try {
+      const t = this.ctx.currentTime;
       const osc = this.ctx.createOscillator();
       const gain = this.ctx.createGain();
       osc.type = type;
-      osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
-      gain.gain.setValueAtTime(vol, this.ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
+      osc.frequency.setValueAtTime(freq, t);
+      gain.gain.setValueAtTime(vol, t);
+      gain.gain.linearRampToValueAtTime(0.001, t + duration);
       osc.connect(gain);
       gain.connect(this.ctx.destination);
-      osc.start();
-      osc.stop(this.ctx.currentTime + duration);
+      osc.start(t);
+      osc.stop(t + duration);
     } catch(e) {}
   }
   shoot() {
     if (!this.enabled || !this.ctx) return;
+    this.unlock();
     try {
+      const t = this.ctx.currentTime;
       const osc = this.ctx.createOscillator();
       const gain = this.ctx.createGain();
       osc.type = 'square';
-      osc.frequency.setValueAtTime(450, this.ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(80, this.ctx.currentTime + 0.1);
-      gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
-      gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.1);
+      osc.frequency.setValueAtTime(480, t);
+      osc.frequency.exponentialRampToValueAtTime(60, t + 0.12);
+      gain.gain.setValueAtTime(0.2, t);
+      gain.gain.linearRampToValueAtTime(0.01, t + 0.12);
       osc.connect(gain);
       gain.connect(this.ctx.destination);
-      osc.start();
-      osc.stop(this.ctx.currentTime + 0.1);
-    } catch(e){}
+      osc.start(t);
+      osc.stop(t + 0.12);
+    } catch(e) {}
   }
   explode() {
     if (!this.enabled || !this.ctx) return;
+    this.unlock();
     try {
-      const bufferSize = this.ctx.sampleRate * 0.25;
+      const t = this.ctx.currentTime;
+      const bufferSize = Math.floor(this.ctx.sampleRate * 0.25);
       const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
       const data = buffer.getChannelData(0);
       for (let i = 0; i < bufferSize; i++) {
-        data[i] = Math.random() * 2 - 1;
+        data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
       }
       const noise = this.ctx.createBufferSource();
       noise.buffer = buffer;
       const gain = this.ctx.createGain();
-      gain.gain.setValueAtTime(0.18, this.ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.25);
+      gain.gain.setValueAtTime(0.25, t);
+      gain.gain.linearRampToValueAtTime(0.01, t + 0.25);
       noise.connect(gain);
       gain.connect(this.ctx.destination);
-      noise.start();
-    } catch(e){}
+      noise.start(t);
+    } catch(e) {}
   }
   hitSteel() {
-    this.playTone(880, 0.06, 'square', 0.12);
+    this.playTone(800, 0.08, 'square', 0.18);
   }
   hitBrick() {
-    this.playTone(180, 0.05, 'triangle', 0.08);
+    this.playTone(200, 0.06, 'triangle', 0.15);
   }
   powerup() {
     if (!this.enabled || !this.ctx) return;
     const notes = [262, 330, 392, 523, 659, 784];
     notes.forEach((f, i) => {
-      setTimeout(() => this.playTone(f, 0.08, 'square', 0.12), i * 40);
+      setTimeout(() => this.playTone(f, 0.08, 'square', 0.18), i * 50);
     });
   }
   startJingle() {
     if (!this.enabled || !this.ctx) return;
-    const melody = [
-      {f: 392, d: 0.08}, {f: 523, d: 0.08}, {f: 659, d: 0.08}, {f: 784, d: 0.15},
-      {f: 659, d: 0.08}, {f: 784, d: 0.25}
+    this.unlock();
+    const notes = [
+      {f: 392, d: 0.1}, {f: 523, d: 0.1}, {f: 659, d: 0.1}, {f: 784, d: 0.15},
+      {f: 659, d: 0.1}, {f: 784, d: 0.3}
     ];
-    let t = 0;
-    melody.forEach(m => {
-      setTimeout(() => this.playTone(m.f, m.d, 'square', 0.12), t * 1000);
-      t += m.d;
+    let offset = 0;
+    notes.forEach(n => {
+      setTimeout(() => this.playTone(n.f, n.d, 'square', 0.2), offset * 1000);
+      offset += n.d;
     });
   }
 }
 
-const sfx = new SoundFx();
+const sfx = new SoundEngine();
+
+// 手机屏幕任意点击均自动激活音效引擎
+['touchstart', 'touchend', 'click', 'mousedown'].forEach(evt => {
+  document.addEventListener(evt, () => sfx.unlock(), { passive: true });
+});
 
 /* ==========================================================================
    游戏引擎核心与常量
@@ -347,7 +358,7 @@ const MAP_COLS = 13;
 const MAP_ROWS = 13;
 const MAP_WIDTH = MAP_COLS * TILE_SIZE; // 416
 const MAP_HEIGHT = MAP_ROWS * TILE_SIZE; // 416
-const SIDE_PANEL_WIDTH = 48; // 右侧计分栏
+const SIDE_PANEL_WIDTH = 48;
 
 const TILE = {
   EMPTY: 0,
@@ -372,9 +383,9 @@ const VEC = [
   [-1, 0]
 ];
 
-// 经典关卡数据
+// 经典关卡
 const STAGES = [
-  // 第 1 关
+  // 关卡 1
   [
     [0,0,0,0,0,0,0,0,0,0,0,0,0],
     [0,1,0,1,0,1,0,1,0,1,0,1,0],
@@ -390,7 +401,7 @@ const STAGES = [
     [0,1,0,0,0,1,1,1,0,0,0,1,0],
     [0,0,0,1,0,1,9,1,0,1,0,0,0]
   ],
-  // 第 2 关
+  // 关卡 2
   [
     [0,0,0,0,0,0,0,0,0,0,0,0,0],
     [0,1,1,0,3,3,0,3,3,0,1,1,0],
@@ -406,7 +417,7 @@ const STAGES = [
     [0,1,0,1,0,1,1,1,0,1,0,1,0],
     [0,0,0,1,0,1,9,1,0,1,0,0,0]
   ],
-  // 第 3 关
+  // 关卡 3
   [
     [0,0,0,0,0,0,0,0,0,0,0,0,0],
     [0,2,0,1,0,2,0,2,0,1,0,2,0],
@@ -432,7 +443,7 @@ const Cheats = {
 };
 
 /* ==========================================================================
-   实体类: 子弹 Bullet
+   实体: 子弹
    ========================================================================== */
 class Bullet {
   constructor(x, y, dir, speed, isPlayer, powerLevel=1) {
@@ -442,7 +453,6 @@ class Bullet {
     this.speed = speed;
     this.isPlayer = isPlayer;
     this.powerLevel = powerLevel;
-    this.size = 6;
     this.active = true;
   }
   update(game) {
@@ -469,6 +479,7 @@ class Bullet {
         if (this.isPlayer && this.powerLevel >= 3) {
           game.map[row][col] = TILE.EMPTY;
           game.createExplosion(this.x, this.y, 'small');
+          sfx.hitSteel();
         } else {
           sfx.hitSteel();
         }
@@ -512,13 +523,13 @@ class Bullet {
   draw(ctx) {
     ctx.fillStyle = '#fff';
     ctx.beginPath();
-    ctx.arc(this.x, this.y, 3, 0, Math.PI * 2);
+    ctx.arc(this.x, this.y, 3.5, 0, Math.PI * 2);
     ctx.fill();
   }
 }
 
 /* ==========================================================================
-   实体类: 坦克基类 Tank
+   实体: 坦克基类 (加入 FC 原版平滑拐角物理)
    ========================================================================== */
 class Tank {
   constructor(x, y, dir, speed, color) {
@@ -535,7 +546,6 @@ class Tank {
     if (nx < 0 || nx + this.size > MAP_WIDTH || ny < 0 || ny + this.size > MAP_HEIGHT) {
       return false;
     }
-    // 允许 3 像素的边缘容错，防止过缝隙卡死
     const margin = 3;
     const c1 = Math.floor((nx + margin) / TILE_SIZE);
     const r1 = Math.floor((ny + margin) / TILE_SIZE);
@@ -566,14 +576,13 @@ class Tank {
     ctx.fillRect(-hs, -hs, 6, s);
     ctx.fillRect(hs - 6, -hs, 6, s);
 
-    // 履带动效
-    ctx.fillStyle = this.trackAnim ? '#111' : '#666';
+    ctx.fillStyle = this.trackAnim ? '#111' : '#777';
     for (let i = -hs + 2; i < hs - 2; i += 6) {
       ctx.fillRect(-hs, i, 6, 2);
       ctx.fillRect(hs - 6, i, 6, 2);
     }
 
-    // 底盘
+    // 车身底盘
     ctx.fillStyle = this.color;
     ctx.fillRect(-hs + 6, -hs + 4, s - 12, s - 8);
 
@@ -592,17 +601,20 @@ class Tank {
 }
 
 /* ==========================================================================
-   实体类: 玩家坦克 PlayerTank
+   实体: 玩家坦克
    ========================================================================== */
 class PlayerTank extends Tank {
   constructor(x, y) {
-    super(x, y, DIR.UP, 3.2, '#f1c40f'); // 提高基础速度至 3.2，手感更敏捷
+    super(x, y, DIR.UP, 3.2, '#f1c40f');
     this.level = 1;
     this.invulnerable = true;
     this.invulTime = 180;
     this.maxBullets = 1;
+    this.shootCooldown = 0;
   }
   update(game, input) {
+    if (this.shootCooldown > 0) this.shootCooldown--;
+
     if (Cheats.godShield) {
       this.invulnerable = true;
     } else if (this.invulTime > 0) {
@@ -618,17 +630,20 @@ class PlayerTank extends Tank {
     if (input.dir !== null) {
       this.dir = input.dir;
       const [dx, dy] = VEC[this.dir];
-      
-      // 拐弯智能滑行对齐（自动贴近过道网格，避免卡墙角）
+
+      // 原版 FC 辅助自动对齐：拐弯时自动纠偏到网格过道中线
+      const subGrid = 16;
       if (this.dir === DIR.UP || this.dir === DIR.DOWN) {
-        const snapCol = Math.round(this.x / 16) * 16;
-        if (Math.abs(this.x - snapCol) > 0.5) {
-          this.x += (snapCol - this.x) * 0.4;
+        const targetX = Math.round(this.x / subGrid) * subGrid;
+        const diffX = targetX - this.x;
+        if (Math.abs(diffX) > 0.1) {
+          this.x += Math.sign(diffX) * Math.min(Math.abs(diffX), 2.0);
         }
       } else {
-        const snapRow = Math.round(this.y / 16) * 16;
-        if (Math.abs(this.y - snapRow) > 0.5) {
-          this.y += (snapRow - this.y) * 0.4;
+        const targetY = Math.round(this.y / subGrid) * subGrid;
+        const diffY = targetY - this.y;
+        if (Math.abs(diffY) > 0.1) {
+          this.y += Math.sign(diffY) * Math.min(Math.abs(diffY), 2.0);
         }
       }
 
@@ -642,7 +657,7 @@ class PlayerTank extends Tank {
       }
     }
 
-    if (input.fire || Cheats.autoFire) {
+    if ((input.fire || Cheats.autoFire) && this.shootCooldown <= 0) {
       this.shoot(game);
     }
   }
@@ -654,6 +669,7 @@ class PlayerTank extends Tank {
       const by = this.y + this.size / 2 + dy * 16;
       const speed = this.level >= 2 ? 7.5 : 5.5;
       game.bullets.push(new Bullet(bx, by, this.dir, speed, true, this.level));
+      this.shootCooldown = 12; // 射击间隔防误触连击
       sfx.shoot();
     }
   }
@@ -697,7 +713,7 @@ class PlayerTank extends Tank {
 }
 
 /* ==========================================================================
-   实体类: 敌方坦克 EnemyTank
+   实体: 敌方坦克
    ========================================================================== */
 class EnemyTank extends Tank {
   constructor(x, y, type=0) {
@@ -714,7 +730,7 @@ class EnemyTank extends Tank {
     this.moveTimer--;
     if (this.moveTimer <= 0) {
       this.moveTimer = Math.floor(Math.random() * 60) + 30;
-      if (Math.random() < 0.6) {
+      if (Math.random() < 0.65) {
         this.dir = (this.y < 10 * TILE_SIZE) ? DIR.DOWN : (this.x < 6 * TILE_SIZE ? DIR.RIGHT : DIR.LEFT);
       } else {
         this.dir = Math.floor(Math.random() * 4);
@@ -739,7 +755,7 @@ class EnemyTank extends Tank {
       const [bdx, bdy] = VEC[this.dir];
       const bx = this.x + this.size / 2 + bdx * 16;
       const by = this.y + this.size / 2 + bdy * 16;
-      game.bullets.push(new Bullet(bx, by, this.dir, 4, false));
+      game.bullets.push(new Bullet(bx, by, this.dir, 4.5, false));
     }
   }
   takeDamage(dmg, game) {
@@ -769,7 +785,7 @@ class EnemyTank extends Tank {
 }
 
 /* ==========================================================================
-   实体类: 掉落宝物 PowerUp
+   实体: 道具宝物
    ========================================================================== */
 class PowerUp {
   constructor(x, y, kind) {
@@ -842,7 +858,7 @@ class PowerUp {
 }
 
 /* ==========================================================================
-   游戏主控制器 Game
+   游戏控制器
    ========================================================================== */
 class Game {
   constructor() {
@@ -871,7 +887,7 @@ class Game {
     this.powerups = [];
     this.baseAlive = true;
     this.player = new PlayerTank(4 * TILE_SIZE, 12 * TILE_SIZE);
-    this.spawnTimer = 60;
+    this.spawnTimer = 40;
     sfx.startJingle();
   }
   spawnEnemy() {
@@ -918,7 +934,6 @@ class Game {
       x, y,
       radius: 4,
       maxRadius: type === 'large' ? 24 : 12,
-      timer: 0,
       active: true
     });
   }
@@ -940,7 +955,7 @@ class Game {
 
     this.spawnTimer--;
     if (this.spawnTimer <= 0) {
-      this.spawnTimer = 120;
+      this.spawnTimer = 100;
       this.spawnEnemy();
     }
 
@@ -954,7 +969,7 @@ class Game {
     this.powerups = this.powerups.filter(p => p.active);
 
     this.explosions.forEach(exp => {
-      exp.radius += 1.5;
+      exp.radius += 1.8;
       if (exp.radius >= exp.maxRadius) exp.active = false;
     });
     this.explosions = this.explosions.filter(exp => exp.active);
@@ -965,9 +980,9 @@ class Game {
   }
   draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-
     if (!this.map || !this.map.length) return;
 
+    // 地图绘制
     for (let r = 0; r < MAP_ROWS; r++) {
       for (let c = 0; c < MAP_COLS; c++) {
         const tile = this.map[r][c];
@@ -1015,7 +1030,7 @@ class Game {
     if (this.player && this.player.alive) this.player.draw(ctx);
     this.bullets.forEach(b => b.draw(ctx));
 
-    // 草丛层
+    // 草丛遮罩
     for (let r = 0; r < MAP_ROWS; r++) {
       for (let c = 0; c < MAP_COLS; c++) {
         if (this.map[r][c] === TILE.TREES) {
@@ -1030,7 +1045,7 @@ class Game {
       }
     }
 
-    // 爆炸层
+    // 爆炸粒子
     this.explosions.forEach(exp => {
       ctx.save();
       ctx.fillStyle = '#ff4500';
@@ -1048,7 +1063,7 @@ class Game {
   }
   drawSidePanel() {
     const px = MAP_WIDTH;
-    ctx.fillStyle = '#333';
+    ctx.fillStyle = '#2a2a2a';
     ctx.fillRect(px, 0, SIDE_PANEL_WIDTH, MAP_HEIGHT);
 
     ctx.fillStyle = '#fff';
@@ -1083,107 +1098,70 @@ class Game {
 const game = new Game();
 
 /* ==========================================================================
-   全新手感优化: 360° 无死角灵敏触控虚拟摇杆
+   手感大幅重构: 滑动式多方向触控盘（支持长按连续滑动转向）
    ========================================================================== */
 function setupInput() {
-  const joystickArea = document.getElementById('joystick-area');
-  const joystickKnob = document.getElementById('joystick-knob');
+  const dpadContainer = document.getElementById('dpad-container');
   const btnFire = document.getElementById('btn-fire');
   const btnTurbo = document.getElementById('btn-turbo');
 
-  const maxRadius = 45; // 摇杆最大拉动距离
-  let touchId = null;
+  function getDirectionFromCoords(x, y, rect) {
+    const cx = rect.width / 2;
+    const cy = rect.height / 2;
+    const dx = x - cx;
+    const dy = y - cy;
 
-  function updateJoystick(touch) {
-    const rect = joystickArea.getBoundingClientRect();
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
+    if (Math.hypot(dx, dy) < 12) return null;
 
-    const dx = touch.clientX - centerX;
-    const dy = touch.clientY - centerY;
-    const dist = Math.hypot(dx, dy);
+    if (Math.abs(dx) > Math.abs(dy)) {
+      return dx > 0 ? DIR.RIGHT : DIR.LEFT;
+    } else {
+      return dy > 0 ? DIR.DOWN : DIR.UP;
+    }
+  }
 
-    // 死区阈值调小至 8px，极大提高起步响应灵敏度
-    if (dist < 8) {
+  function updateDpadVisual(dir) {
+    document.querySelectorAll('.d-btn').forEach(b => b.classList.remove('pressed'));
+    if (dir === DIR.UP) document.getElementById('btn-up').classList.add('pressed');
+    if (dir === DIR.DOWN) document.getElementById('btn-down').classList.add('pressed');
+    if (dir === DIR.LEFT) document.getElementById('btn-left').classList.add('pressed');
+    if (dir === DIR.RIGHT) document.getElementById('btn-right').classList.add('pressed');
+  }
+
+  function handleDpadTouch(e) {
+    e.preventDefault();
+    if (!e.touches.length) {
       game.input.dir = null;
-      joystickKnob.style.transform = `translate(0px, 0px)`;
-      resetIndicators();
+      updateDpadVisual(null);
       return;
     }
+    const rect = dpadContainer.getBoundingClientRect();
+    const touch = e.touches[0];
+    const x = touch.clientX - rect.left;
+    const y = touch.clientY - rect.top;
 
-    // 限制摇杆圆盘拉动范围
-    const angle = Math.atan2(dy, dx);
-    const clampedDist = Math.min(dist, maxRadius);
-    const knobX = Math.cos(angle) * clampedDist;
-    const knobY = Math.sin(angle) * clampedDist;
-    joystickKnob.style.transform = `translate(${knobX}px, ${knobY}px)`;
-
-    // 4向灵敏判定 (利用对角线 45° 分割)
-    resetIndicators();
-    if (Math.abs(dx) > Math.abs(dy)) {
-      if (dx > 0) {
-        game.input.dir = DIR.RIGHT;
-        document.getElementById('ind-right').style.color = '#ffd700';
-      } else {
-        game.input.dir = DIR.LEFT;
-        document.getElementById('ind-left').style.color = '#ffd700';
-      }
-    } else {
-      if (dy > 0) {
-        game.input.dir = DIR.DOWN;
-        document.getElementById('ind-down').style.color = '#ffd700';
-      } else {
-        game.input.dir = DIR.UP;
-        document.getElementById('ind-up').style.color = '#ffd700';
-      }
-    }
+    const dir = getDirectionFromCoords(x, y, rect);
+    game.input.dir = dir;
+    updateDpadVisual(dir);
   }
 
-  function resetIndicators() {
-    document.querySelectorAll('.dir-indicator').forEach(el => el.style.color = '#666');
-  }
-
-  function resetJoystick() {
-    touchId = null;
-    game.input.dir = null;
-    joystickKnob.style.transform = `translate(0px, 0px)`;
-    resetIndicators();
-  }
-
-  joystickArea.addEventListener('touchstart', (e) => {
+  dpadContainer.addEventListener('touchstart', handleDpadTouch, {passive:false});
+  dpadContainer.addEventListener('touchmove', handleDpadTouch, {passive:false});
+  dpadContainer.addEventListener('touchend', (e) => {
     e.preventDefault();
-    const touch = e.changedTouches[0];
-    touchId = touch.identifier;
-    updateJoystick(touch);
+    game.input.dir = null;
+    updateDpadVisual(null);
   }, {passive:false});
-
-  window.addEventListener('touchmove', (e) => {
-    if (touchId === null) return;
-    for (let i = 0; i < e.touches.length; i++) {
-      if (e.touches[i].identifier === touchId) {
-        updateJoystick(e.touches[i]);
-        break;
-      }
-    }
-  }, {passive:false});
-
-  window.addEventListener('touchend', (e) => {
-    if (touchId === null) return;
-    for (let i = 0; i < e.changedTouches.length; i++) {
-      if (e.changedTouches[i].identifier === touchId) {
-        resetJoystick();
-        break;
-      }
-    }
-  }, {passive:false});
-
-  window.addEventListener('touchcancel', (e) => {
-    resetJoystick();
+  dpadContainer.addEventListener('touchcancel', (e) => {
+    e.preventDefault();
+    game.input.dir = null;
+    updateDpadVisual(null);
   }, {passive:false});
 
   // 开火按键
   btnFire.addEventListener('touchstart', (e) => {
     e.preventDefault();
+    sfx.unlock();
     btnFire.classList.add('pressed');
     game.input.fire = true;
   }, {passive:false});
@@ -1201,28 +1179,33 @@ function setupInput() {
   // 连发
   btnTurbo.addEventListener('click', (e) => {
     e.preventDefault();
+    sfx.unlock();
     Cheats.autoFire = !Cheats.autoFire;
     btnTurbo.classList.toggle('active', Cheats.autoFire);
   });
 
-  // 键盘控制 (电脑端依然完美兼容)
+  // 键盘支持
   window.addEventListener('keydown', (e) => {
+    sfx.unlock();
     if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') game.input.dir = DIR.UP;
     if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') game.input.dir = DIR.DOWN;
     if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') game.input.dir = DIR.LEFT;
     if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') game.input.dir = DIR.RIGHT;
     if (e.key === ' ' || e.key === 'j' || e.key === 'J') game.input.fire = true;
+    updateDpadVisual(game.input.dir);
   });
   window.addEventListener('keyup', (e) => {
     if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','w','s','a','d','W','S','A','D'].includes(e.key)) {
       game.input.dir = null;
     }
     if (e.key === ' ' || e.key === 'j' || e.key === 'J') game.input.fire = false;
+    updateDpadVisual(game.input.dir);
   });
 
-  // 作弊工具
+  // 顶部作弊工具
   const btnGod = document.getElementById('cheat-god');
   btnGod.addEventListener('click', () => {
+    sfx.unlock();
     Cheats.infiniteLives = !Cheats.infiniteLives;
     btnGod.classList.toggle('active', Cheats.infiniteLives);
     btnGod.innerText = `🛡️ 无限生命: ${Cheats.infiniteLives ? '开' : '关'}`;
@@ -1230,12 +1213,14 @@ function setupInput() {
 
   const btnInvul = document.getElementById('cheat-invul');
   btnInvul.addEventListener('click', () => {
+    sfx.unlock();
     Cheats.godShield = !Cheats.godShield;
     btnInvul.classList.toggle('active', Cheats.godShield);
     btnInvul.innerText = `✨ 护盾金身: ${Cheats.godShield ? '开' : '关'}`;
   });
 
   document.getElementById('cheat-max').addEventListener('click', () => {
+    sfx.unlock();
     if (game.player) {
       game.player.level = 4;
       game.player.maxBullets = 2;
@@ -1244,6 +1229,7 @@ function setupInput() {
   });
 
   document.getElementById('cheat-bomb').addEventListener('click', () => {
+    sfx.unlock();
     for (const e of game.enemies) {
       e.alive = false;
       game.score += 200;
@@ -1253,35 +1239,38 @@ function setupInput() {
   });
 
   document.getElementById('cheat-base').addEventListener('click', () => {
+    sfx.unlock();
     game.fortifyBase();
     sfx.powerup();
   });
 
   const btnSound = document.getElementById('btn-sound');
   btnSound.addEventListener('click', () => {
+    sfx.unlock();
     sfx.enabled = !sfx.enabled;
+    btnSound.classList.toggle('active', sfx.enabled);
     btnSound.innerText = `🔊 声音: ${sfx.enabled ? '开' : '关'}`;
   });
 
   document.getElementById('btn-next-stage').addEventListener('click', () => {
+    sfx.unlock();
     game.nextStage();
   });
 
   document.getElementById('start-btn').addEventListener('click', () => {
-    sfx.init();
+    sfx.unlock();
     document.getElementById('modal').style.display = 'none';
     game.loadStage(0);
     game.running = true;
   });
 }
 
-// 主渲染循环
 function gameLoop() {
   try {
     game.update();
     game.draw();
   } catch (err) {
-    console.error('Game loop error:', err);
+    console.error('Game error:', err);
   }
   requestAnimationFrame(gameLoop);
 }
